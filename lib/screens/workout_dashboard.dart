@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'camera_screen.dart'; // Import the camera screen
 
 // Using the same AppTheme from your existing code
 class AppTheme {
@@ -425,29 +426,12 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
   }
 
   void _openCameraForExercise(String exerciseName) {
-    // This will open the camera for the selected exercise
-    // For now, we'll show a placeholder dialog
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppTheme.cardColor,
-          title: Text(
-            'Camera Assistant',
-            style: TextStyle(color: AppTheme.textColor),
-          ),
-          content: Text(
-            'Opening camera for $exerciseName exercise...\n\nThis will be connected to your computer vision Python code.',
-            style: TextStyle(color: AppTheme.subtextColor),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('OK', style: TextStyle(color: AppTheme.primaryColor)),
-            ),
-          ],
-        );
-      },
+    // Navigate to camera screen for the selected exercise
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CameraScreen(exerciseName: exerciseName),
+      ),
     );
   }
 }
