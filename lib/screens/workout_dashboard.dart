@@ -16,7 +16,10 @@ class WorkoutDashboard extends StatefulWidget {
   _WorkoutDashboardState createState() => _WorkoutDashboardState();
 }
 
-class _WorkoutDashboardState extends State<WorkoutDashboard> {
+class _WorkoutDashboardState extends State<WorkoutDashboard>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
   // Static data for calories balance
   final int dailyCaloriesGoal = 2000;
   final int consumedCalories = 1650;
@@ -57,6 +60,18 @@ class _WorkoutDashboardState extends State<WorkoutDashboard> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -76,265 +91,215 @@ class _WorkoutDashboardState extends State<WorkoutDashboard> {
           ),
         ),
         centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildCaloriesBalance(),
-            const SizedBox(height: 24),
-            _buildTrainingHistory(),
-            const SizedBox(height: 24),
-            _buildExerciseAssistant(),
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: AppTheme.primaryColor,
+          labelColor: AppTheme.primaryColor,
+          unselectedLabelColor: AppTheme.subtextColor,
+          tabs: const [
+            Tab(
+              icon: Icon(Icons.local_fire_department, size: 20),
+              text: 'Calories',
+            ),
+            Tab(icon: Icon(Icons.history, size: 20), text: 'History'),
+            Tab(icon: Icon(Icons.sports, size: 20), text: 'Assistant'),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildCaloriesTab(),
+          _buildHistoryTab(),
+          _buildAssistantTab(),
+        ],
       ),
     );
   }
 
-  Widget _buildCaloriesBalance() {
+  Widget _buildCaloriesTab() {
     int netCalories = consumedCalories - burnedCalories;
     int remaining = dailyCaloriesGoal - netCalories;
     double progress = netCalories / dailyCaloriesGoal;
 
-    return Container(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.local_fire_department,
-                color: AppTheme.primaryColor,
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Calories Balance',
-                style: TextStyle(
-                  color: AppTheme.textColor,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Progress circle
-          Center(
-            child: SizedBox(
-              width: 120,
-              height: 120,
-              child: Stack(
-                children: [
-                  CircularProgressIndicator(
-                    value: progress.clamp(0.0, 1.0),
-                    strokeWidth: 8,
-                    backgroundColor: Colors.grey[700],
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      remaining > 0 ? AppTheme.primaryColor : Colors.red[400]!,
-                    ),
-                  ),
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          remaining > 0 ? remaining.toString() : '0',
-                          style: TextStyle(
-                            color: AppTheme.textColor,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          'remaining',
-                          style: TextStyle(
-                            color: AppTheme.subtextColor,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Calories breakdown
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildCalorieItem('Goal', dailyCaloriesGoal, Colors.blue[300]!),
-              _buildCalorieItem(
-                'Consumed',
-                consumedCalories,
-                Colors.orange[300]!,
-              ),
-              _buildCalorieItem('Burned', burnedCalories, Colors.green[300]!),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCalorieItem(String label, int value, Color color) {
-    return Column(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value.toString(),
-          style: TextStyle(
-            color: AppTheme.textColor,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(color: AppTheme.subtextColor, fontSize: 12),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTrainingHistory() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.history, color: AppTheme.primaryColor, size: 24),
-              const SizedBox(width: 8),
-              Text(
-                'Training History',
-                style: TextStyle(
-                  color: AppTheme.textColor,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          ...trainingHistory.map((session) => _buildHistoryItem(session)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHistoryItem(TrainingSession session) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+              color: AppTheme.cardColor,
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(session.icon, color: AppTheme.primaryColor, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  session.type,
+                  'Daily Calories Goal',
                   style: TextStyle(
-                    color: AppTheme.textColor,
+                    color: AppTheme.subtextColor,
                     fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
+                const SizedBox(height: 24),
+
+                // Progress circle
+                SizedBox(
+                  width: 160,
+                  height: 160,
+                  child: Stack(
+                    children: [
+                      CircularProgressIndicator(
+                        value: progress.clamp(0.0, 1.0),
+                        strokeWidth: 12,
+                        backgroundColor: Colors.grey[700],
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          remaining > 0
+                              ? AppTheme.primaryColor
+                              : Colors.red[400]!,
+                        ),
+                      ),
+                      Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              remaining > 0 ? remaining.toString() : '0',
+                              style: TextStyle(
+                                color: AppTheme.textColor,
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'calories remaining',
+                              style: TextStyle(
+                                color: AppTheme.subtextColor,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Calories breakdown
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildCalorieItem(
+                      'Goal',
+                      dailyCaloriesGoal,
+                      Colors.blue[300]!,
+                    ),
+                    _buildCalorieItem(
+                      'Consumed',
+                      consumedCalories,
+                      Colors.orange[300]!,
+                    ),
+                    _buildCalorieItem(
+                      'Burned',
+                      burnedCalories,
+                      Colors.green[300]!,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Recent Workouts',
+            style: TextStyle(
+              color: AppTheme.textColor,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          ...trainingHistory.map((session) => _buildHistoryItem(session)),
+
+          const SizedBox(height: 20),
+
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppTheme.cardColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.insights, color: AppTheme.primaryColor, size: 48),
+                const SizedBox(height: 16),
                 Text(
-                  '${session.duration} • ${session.calories} cal',
+                  'Weekly Summary',
+                  style: TextStyle(
+                    color: AppTheme.textColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '3 workouts completed\n780 calories burned',
+                  textAlign: TextAlign.center,
                   style: TextStyle(color: AppTheme.subtextColor, fontSize: 14),
                 ),
               ],
             ),
           ),
-          Text(
-            session.date,
-            style: TextStyle(color: AppTheme.subtextColor, fontSize: 12),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildExerciseAssistant() {
-    return Container(
+  Widget _buildAssistantTab() {
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.sports, color: AppTheme.primaryColor, size: 24),
-              const SizedBox(width: 8),
-              Text(
-                'Exercise Assistant',
-                style: TextStyle(
-                  color: AppTheme.textColor,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+          Text(
+            'Exercise Assistant',
+            style: TextStyle(
+              color: AppTheme.textColor,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          const SizedBox(height: 16),
-
+          const SizedBox(height: 8),
           Text(
             'Select an exercise to start with camera assistance:',
             style: TextStyle(color: AppTheme.subtextColor, fontSize: 14),
           ),
-
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
 
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.1,
             ),
             itemCount: exercises.length,
             itemBuilder: (context, index) {
@@ -346,14 +311,94 @@ class _WorkoutDashboardState extends State<WorkoutDashboard> {
     );
   }
 
+  Widget _buildCalorieItem(String label, int value, Color color) {
+    return Column(
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value.toString(),
+          style: TextStyle(
+            color: AppTheme.textColor,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(color: AppTheme.subtextColor, fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHistoryItem(TrainingSession session) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(session.icon, color: AppTheme.primaryColor, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  session.type,
+                  style: TextStyle(
+                    color: AppTheme.textColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${session.duration} • ${session.calories} cal',
+                  style: TextStyle(color: AppTheme.subtextColor, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            children: [
+              Text(
+                session.date,
+                style: TextStyle(color: AppTheme.subtextColor, fontSize: 12),
+              ),
+              const SizedBox(height: 4),
+              Icon(Icons.chevron_right, color: AppTheme.subtextColor, size: 20),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildExerciseCard(ExerciseType exercise) {
     return GestureDetector(
       onTap: () => _openCameraForExercise(exercise.name),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppTheme.backgroundColor,
-          borderRadius: BorderRadius.circular(12),
+          color: AppTheme.cardColor,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: AppTheme.primaryColor.withOpacity(0.3),
             width: 1,
@@ -362,8 +407,8 @@ class _WorkoutDashboardState extends State<WorkoutDashboard> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(exercise.icon, color: AppTheme.primaryColor, size: 32),
-            const SizedBox(height: 8),
+            Icon(exercise.icon, color: AppTheme.primaryColor, size: 40),
+            const SizedBox(height: 12),
             Text(
               exercise.name,
               style: TextStyle(
