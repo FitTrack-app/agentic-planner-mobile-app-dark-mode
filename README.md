@@ -56,7 +56,8 @@ This repository contains the **frontend mobile application** for the Fittrac pro
    ```bash
    flutter pub get
    ```
-   
+
+
 ### Running the App
 
 1. **Connect your Android device via USB cable**
@@ -74,31 +75,66 @@ The app will be installed and launched on your connected Android device.
 
 ## Project Structure
 
-<img width="221" height="340" alt="image" src="https://github.com/user-attachments/assets/e5c8a7e1-5084-42a0-aba6-29aaff57128b" />
+```
+lib/
+├── screens/            # App screens/pages
+├── widgets/            # Reusable UI widgets
+├── models/             # Data models
+├── services/           # API and business logic
+├── providers/          # State management
+├── utils/              # Helper utilities
+└── main.dart           # App entry point
+```
 
 ## Screen Components Overview
 
--**main.dart** : App entry point and navigation setup
--**welcome_screen.dart** : First screen users see with app introduction and navigation to login/signup
--**login_screen.dart** : User authentication and login functionality
--**signup_screen.dart** : New user registration with form validation
--**forgot_password.dart** :  Password recovery flow for existing users
--**homescreen.dart** : Main home screen after login, central navigation hub
--**dashboard_home.dart** : User dashboard with overview of fitness progress and stats
--**workout_dashboard.dart** : Workout-specific dashboard showing exercise plans and progress
--**camera_screen.dart** : Real-time form checking using device camera and AI analysis
--**metrics_screen.dart** :  Detailed fitness metrics, charts, and progress tracking
--**Profile.dart** : User profile management, settings, and account information
-
-
-## Key Features
-
-- **WorkoutPlanner**: AI-powered workout creation interface
-- **FormChecker**: Real-time exercise form analysis using device camera
-- **Dashboard**: Progress tracking and analytics
-- **ExerciseLibrary**: Browse and search exercise database
+- **main.dart** - App entry point and navigation setup
+- **welcome_screen.dart** - First screen users see with app introduction and navigation to login/signup
+- **login_screen.dart** - User authentication and login functionality
+- **signup_screen.dart** - New user registration with form validation
+- **forgot_password.dart** - Password recovery flow for existing users
+- **homescreen.dart** - Main home screen after login, central navigation hub
+- **dashboard_home.dart** - User dashboard with overview of fitness progress and stats
+- **workout_dashboard.dart** - Workout-specific dashboard showing exercise plans and progress
+- **camera_screen.dart** - Real-time form checking using device camera and AI analysis
+- **metrics_screen.dart** - Detailed fitness metrics, charts, and progress tracking
+- **Profile.dart** - User profile management, settings, and account information
 
 ## Camera Integration
 
-The app requires camera permissions for form checking features. Camera permissions are configured in the android/app/src/main/AndroidManifest.xml file. The app will automatically request permissions when the camera feature is first used.
+The app requires camera permissions for form checking features. Camera permissions are configured in the `android/app/src/main/AndroidManifest.xml` file. The app will automatically request permissions when the camera feature is first used.
 
+
+## Development
+
+```bash
+# Run in debug mode
+flutter run
+
+# Run in release mode
+flutter run --release
+
+# Build APK
+flutter build apk
+
+# Clean build files
+flutter clean
+```
+
+## Testing
+
+```bash
+# Run unit tests
+flutter run
+
+
+
+
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For frontend-specific issues, please use this repository's [issue tracker](https://github.com/fittrac/frontend/issues).
+
+For general project questions, visit our [main documentation](https://github.com/fittrac/docs) or [community discussions](https://github.com/orgs/fittrac/discussions).
