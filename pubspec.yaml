@@ -12,7 +12,12 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   camera: ^0.10.5+5
+  web_socket_channel: ^2.4.0
+  image: ^4.1.7
+  wakelock_plus: ^1.2.4
+  flutter_tts: ^3.8.3
   permission_handler: ^11.0.1
+  flutter_colorpicker: ^1.0.3
 
 dev_dependencies:
   flutter_test:

@@ -8,6 +8,10 @@ class AppTheme {
   static Color cardColor = Colors.grey[800]!;
   static Color textColor = Colors.white;
   static Color subtextColor = Colors.grey[400]!;
+
+  static void updatePrimaryColor(Color newColor) {
+    primaryColor = newColor;
+  }
 }
 
 class WorkoutDashboard extends StatefulWidget {
@@ -26,28 +30,79 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
   final int consumedCalories = 1650;
   final int burnedCalories = 320;
 
-  // Static training history data
-  final List<TrainingSession> trainingHistory = [
-    TrainingSession(
-      type: 'Strength Training',
-      duration: '45 min',
-      date: 'Today',
-      calories: 280,
-      icon: Icons.fitness_center,
-    ),
-    TrainingSession(
-      type: 'Cardio',
-      duration: '30 min',
+  // Static workout history data
+  final List<WorkoutSession> workoutHistory = [
+    WorkoutSession(
+      name: 'Upper Body Strength',
       date: 'Yesterday',
-      calories: 320,
-      icon: Icons.directions_run,
+      duration: '45 min',
+      calories: 280,
+      exercises: [
+        Exercise('Push-ups', '3 sets x 12 reps', Icons.sports_gymnastics),
+        Exercise('Shoulder Tap', '3 sets x 20 reps', Icons.back_hand),
+        Exercise('Plank', '3 sets x 30 sec', Icons.accessibility_new),
+      ],
+      isCompleted: true,
     ),
-    TrainingSession(
-      type: 'Yoga',
-      duration: '60 min',
+    WorkoutSession(
+      name: 'Cardio Blast',
       date: '2 days ago',
+      duration: '30 min',
+      calories: 320,
+      exercises: [
+        Exercise('Jumping Jacks', '4 sets x 30 sec', Icons.directions_run),
+        Exercise('Squats', '3 sets x 15 reps', Icons.fitness_center),
+      ],
+      isCompleted: true,
+    ),
+    WorkoutSession(
+      name: 'Yoga Flow',
+      date: '3 days ago',
+      duration: '60 min',
       calories: 180,
-      icon: Icons.self_improvement,
+      exercises: [
+        Exercise('Plank', '5 sets x 45 sec', Icons.accessibility_new),
+      ],
+      isCompleted: true,
+    ),
+  ];
+
+  // Static upcoming workout data
+  final List<WorkoutSession> upcomingWorkouts = [
+    WorkoutSession(
+      name: 'Full Body HIIT',
+      date: 'Today',
+      duration: '35 min',
+      calories: 350,
+      exercises: [
+        Exercise('Squats', '4 sets x 20 reps', Icons.fitness_center),
+        Exercise('Push-ups', '3 sets x 15 reps', Icons.sports_gymnastics),
+        Exercise('Jumping Jacks', '5 sets x 30 sec', Icons.directions_run),
+        Exercise('Plank', '3 sets x 60 sec', Icons.accessibility_new),
+      ],
+      isCompleted: false,
+    ),
+    WorkoutSession(
+      name: 'Core & Flexibility',
+      date: 'Tomorrow',
+      duration: '40 min',
+      calories: 200,
+      exercises: [
+        Exercise('Plank', '4 sets x 45 sec', Icons.accessibility_new),
+        Exercise('Shoulder Tap', '3 sets x 24 reps', Icons.back_hand),
+      ],
+      isCompleted: false,
+    ),
+    WorkoutSession(
+      name: 'Strength Training',
+      date: 'Day after tomorrow',
+      duration: '50 min',
+      calories: 400,
+      exercises: [
+        Exercise('Squats', '4 sets x 18 reps', Icons.fitness_center),
+        Exercise('Push-ups', '4 sets x 12 reps', Icons.sports_gymnastics),
+      ],
+      isCompleted: false,
     ),
   ];
 
@@ -102,7 +157,7 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
               icon: Icon(Icons.local_fire_department, size: 20),
               text: 'Calories',
             ),
-            Tab(icon: Icon(Icons.history, size: 20), text: 'History'),
+            Tab(icon: Icon(Icons.calendar_today, size: 20), text: 'Sessions'),
             Tab(icon: Icon(Icons.sports, size: 20), text: 'Assistant'),
           ],
         ),
@@ -111,7 +166,7 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
         controller: _tabController,
         children: [
           _buildCaloriesTab(),
-          _buildHistoryTab(),
+          _buildSessionsTab(),
           _buildAssistantTab(),
         ],
       ),
@@ -219,54 +274,53 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
     );
   }
 
-  Widget _buildHistoryTab() {
+  Widget _buildSessionsTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Recent Workouts',
-            style: TextStyle(
-              color: AppTheme.textColor,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          ...trainingHistory.map((session) => _buildHistoryItem(session)),
-
-          const SizedBox(height: 20),
-
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppTheme.cardColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                Icon(Icons.insights, color: AppTheme.primaryColor, size: 48),
-                const SizedBox(height: 16),
-                Text(
-                  'Weekly Summary',
-                  style: TextStyle(
-                    color: AppTheme.textColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+          // Upcoming Workouts Section
+          Row(
+            children: [
+              Icon(Icons.schedule, color: AppTheme.primaryColor, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                'Upcoming Workouts',
+                style: TextStyle(
+                  color: AppTheme.textColor,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  '3 workouts completed\n780 calories burned',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppTheme.subtextColor, fontSize: 14),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
+          const SizedBox(height: 16),
+
+          ...upcomingWorkouts.map(
+            (session) => _buildSessionCard(session, true),
+          ),
+
+          const SizedBox(height: 32),
+
+          // Workout History Section
+          Row(
+            children: [
+              Icon(Icons.history, color: AppTheme.primaryColor, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                'Workout History',
+                style: TextStyle(
+                  color: AppTheme.textColor,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          ...workoutHistory.map((session) => _buildSessionCard(session, false)),
         ],
       ),
     );
@@ -312,6 +366,86 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
     );
   }
 
+  Widget _buildSessionCard(WorkoutSession session, bool isUpcoming) {
+    return GestureDetector(
+      onTap: () => _openWorkoutDetail(session),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppTheme.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: isUpcoming && !session.isCompleted
+              ? Border.all(
+                  color: AppTheme.primaryColor.withOpacity(0.5),
+                  width: 1,
+                )
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: session.isCompleted
+                        ? Colors.green.withOpacity(0.2)
+                        : AppTheme.primaryColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    session.isCompleted ? Icons.check_circle : Icons.schedule,
+                    color: session.isCompleted
+                        ? Colors.green
+                        : AppTheme.primaryColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        session.name,
+                        style: TextStyle(
+                          color: AppTheme.textColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${session.duration} • ${session.calories} cal • ${session.date}',
+                        style: TextStyle(
+                          color: AppTheme.subtextColor,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: AppTheme.subtextColor,
+                  size: 20,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '${session.exercises.length} exercises',
+              style: TextStyle(color: AppTheme.subtextColor, fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildCalorieItem(String label, int value, Color color) {
     return Column(
       children: [
@@ -334,61 +468,6 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
           style: TextStyle(color: AppTheme.subtextColor, fontSize: 12),
         ),
       ],
-    );
-  }
-
-  Widget _buildHistoryItem(TrainingSession session) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(session.icon, color: AppTheme.primaryColor, size: 28),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  session.type,
-                  style: TextStyle(
-                    color: AppTheme.textColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${session.duration} • ${session.calories} cal',
-                  style: TextStyle(color: AppTheme.subtextColor, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            children: [
-              Text(
-                session.date,
-                style: TextStyle(color: AppTheme.subtextColor, fontSize: 12),
-              ),
-              const SizedBox(height: 4),
-              Icon(Icons.chevron_right, color: AppTheme.subtextColor, size: 20),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
@@ -434,23 +513,188 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
       ),
     );
   }
+
+  void _openWorkoutDetail(WorkoutSession session) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.backgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _buildWorkoutDetailSheet(session),
+    );
+  }
+
+  Widget _buildWorkoutDetailSheet(WorkoutSession session) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: session.isCompleted
+                      ? Colors.green.withOpacity(0.2)
+                      : AppTheme.primaryColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  session.isCompleted ? Icons.check_circle : Icons.schedule,
+                  color: session.isCompleted
+                      ? Colors.green
+                      : AppTheme.primaryColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      session.name,
+                      style: TextStyle(
+                        color: AppTheme.textColor,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${session.duration} • ${session.calories} cal • ${session.date}',
+                      style: TextStyle(
+                        color: AppTheme.subtextColor,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Exercises',
+            style: TextStyle(
+              color: AppTheme.textColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...session.exercises.map((exercise) => _buildExerciseItem(exercise)),
+          const SizedBox(height: 20),
+          if (!session.isCompleted)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Starting ${session.name}...'),
+                      backgroundColor: AppTheme.primaryColor,
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Start Workout',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExerciseItem(Exercise exercise) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context); // Close the bottom sheet first
+        _openCameraForExercise(exercise.name);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.cardColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(exercise.icon, color: AppTheme.primaryColor, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    exercise.name,
+                    style: TextStyle(
+                      color: AppTheme.textColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    exercise.details,
+                    style: TextStyle(
+                      color: AppTheme.subtextColor,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.camera_alt, color: AppTheme.subtextColor, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // Data models
-class TrainingSession {
-  final String type;
-  final String duration;
+class WorkoutSession {
+  final String name;
   final String date;
+  final String duration;
   final int calories;
+  final List<Exercise> exercises;
+  final bool isCompleted;
+
+  WorkoutSession({
+    required this.name,
+    required this.date,
+    required this.duration,
+    required this.calories,
+    required this.exercises,
+    required this.isCompleted,
+  });
+}
+
+class Exercise {
+  final String name;
+  final String details;
   final IconData icon;
 
-  TrainingSession({
-    required this.type,
-    required this.duration,
-    required this.date,
-    required this.calories,
-    required this.icon,
-  });
+  Exercise(this.name, this.details, this.icon);
 }
 
 class ExerciseType {

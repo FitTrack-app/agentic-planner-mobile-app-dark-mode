@@ -1,9 +1,15 @@
+// lib/camera_screen.dart
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
-// Using the same AppTheme from your existing code
+import 'package:camera/camera.dart';
+import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
+import 'package:permission_handler/permission_handler.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+// Theme (same palette you used)
 class AppTheme {
   static Color primaryColor = Colors.blue[600]!;
   static Color backgroundColor = Colors.black;
@@ -13,22 +19,44 @@ class AppTheme {
 }
 
 class CameraScreen extends StatefulWidget {
-  final String exerciseName;
-
+  final String exerciseName; // e.g. "Plank", "Squats", etc.
   const CameraScreen({Key? key, required this.exerciseName}) : super(key: key);
 
   @override
-  _CameraScreenState createState() => _CameraScreenState();
+  State<CameraScreen> createState() => _CameraScreenState();
 }
 
 class _CameraScreenState extends State<CameraScreen> {
+  // ⇩⇩ PUT YOUR PC'S IP HERE (the one running python server.py) ⇩⇩
+  static const String serverUrl = 'ws://172.20.10.3:8000/ws';
+
   CameraController? _controller;
   List<CameraDescription>? _cameras;
-  bool _isInitialized = false;
-  bool _isRecording = false;
   bool _permissionGranted = false;
-  Timer? _workoutTimer;
-  int _secondsElapsed = 0;
+  bool _isInitialized = false;
+
+  bool _isRecording = false;
+
+  WebSocketChannel? _ws;
+
+  // Throttle & encoding control
+  bool _processing = false;
+  int _lastSendMs = 0;
+
+  // Data from backend
+  int _percent = 0; // 0..100
+  int _holdSeconds = 0; // seconds of "good form" (only when percent==100)
+
+  // Exercise name -> server key
+  String get _serverKey {
+    switch (widget.exerciseName.toLowerCase()) {
+      case 'plank':
+        return 'plank';
+      // add more once backend analyzers return {"percent","hold"} for them
+      default:
+        return 'plank';
+    }
+  }
 
   @override
   void initState() {
@@ -36,71 +64,178 @@ class _CameraScreenState extends State<CameraScreen> {
     _initializeCamera();
   }
 
+  @override
+  void dispose() {
+    _stopStreaming();
+    _closeWs();
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  // ———————————  CAMERA  ———————————
+
   Future<void> _initializeCamera() async {
     // Request camera permission
     final permission = await Permission.camera.request();
 
     if (permission == PermissionStatus.granted) {
-      setState(() {
-        _permissionGranted = true;
-      });
-
+      setState(() => _permissionGranted = true);
       try {
-        // Get available cameras
         _cameras = await availableCameras();
-
         if (_cameras != null && _cameras!.isNotEmpty) {
-          // Use front camera if available, otherwise use first camera
-          CameraDescription selectedCamera = _cameras!.firstWhere(
-            (camera) => camera.lensDirection == CameraLensDirection.front,
+          // Prefer FRONT camera (self coaching), else fallback to first
+          final selected = _cameras!.firstWhere(
+            (c) => c.lensDirection == CameraLensDirection.front,
             orElse: () => _cameras!.first,
           );
 
           _controller = CameraController(
-            selectedCamera,
-            ResolutionPreset.medium,
+            selected,
+            ResolutionPreset.low, // lower = smoother over WS
             enableAudio: false,
+            imageFormatGroup: ImageFormatGroup.yuv420,
           );
 
           await _controller!.initialize();
-
-          if (mounted) {
-            setState(() {
-              _isInitialized = true;
-            });
-          }
+          if (mounted) setState(() => _isInitialized = true);
         }
       } catch (e) {
-        print('Error initializing camera: $e');
+        debugPrint('Error initializing camera: $e');
       }
     } else {
-      setState(() {
-        _permissionGranted = false;
-      });
+      setState(() => _permissionGranted = false);
     }
   }
 
-  void _startWorkout() {
-    setState(() {
-      _isRecording = true;
-      _secondsElapsed = 0;
-    });
-
-    _workoutTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        _secondsElapsed++;
-      });
-    });
+  Future<void> _startStreaming() async {
+    if (_controller == null) return;
+    if (!_controller!.value.isInitialized) return;
+    if (_controller!.value.isStreamingImages) return;
+    await _controller!.startImageStream(_onFrame);
   }
 
-  void _stopWorkout() {
+  Future<void> _stopStreaming() async {
+    if (_controller == null) return;
+    if (_controller!.value.isStreamingImages) {
+      await _controller!.stopImageStream();
+    }
+  }
+
+  void _onFrame(CameraImage imgYuv) async {
+    // Limit to ~5 fps to keep UI smooth and avoid crashes
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (_processing || now - _lastSendMs < 200) return;
+    _lastSendMs = now;
+    _processing = true;
+
+    try {
+      final jpg = _yuv420ToJpeg(imgYuv, quality: 40); // lighter payload
+      _ws?.sink.add(jsonEncode({"frame": base64Encode(jpg)}));
+    } catch (_) {
+      // swallow encoding errors
+    } finally {
+      _processing = false;
+    }
+  }
+
+  // YUV420 -> JPEG (works on Android/iOS)
+  Uint8List _yuv420ToJpeg(CameraImage imgYuv, {int quality = 40}) {
+    final w = imgYuv.width, h = imgYuv.height;
+    final yPlane = imgYuv.planes[0];
+    final uPlane = imgYuv.planes[1];
+    final vPlane = imgYuv.planes[2];
+
+    final yBytes = yPlane.bytes;
+    final uBytes = uPlane.bytes;
+    final vBytes = vPlane.bytes;
+
+    final yStride = yPlane.bytesPerRow;
+    final uStride = uPlane.bytesPerRow;
+    final uvPixStride = uPlane.bytesPerPixel ?? 1;
+
+    final out = img.Image(width: w, height: h);
+
+    for (int ry = 0; ry < h; ry++) {
+      final yRow = ry * yStride;
+      final uvRow = (ry ~/ 2) * uStride;
+      for (int rx = 0; rx < w; rx++) {
+        final yIndex = yRow + rx;
+        final uvIndex = uvRow + (rx ~/ 2) * uvPixStride;
+
+        final Y = yBytes[yIndex];
+        final U = uBytes[uvIndex] - 128;
+        final V = vBytes[uvIndex] - 128;
+
+        // YUV -> RGB
+        int r = (Y + 1.370705 * V).round().clamp(0, 255);
+        int g = (Y - 0.337633 * U - 0.698001 * V).round().clamp(0, 255);
+        int b = (Y + 1.732446 * U).round().clamp(0, 255);
+
+        out.setPixelRgba(rx, ry, r, g, b, 255);
+      }
+    }
+    return Uint8List.fromList(img.encodeJpg(out, quality: quality));
+  }
+
+  // ———————————  WEBSOCKET  ———————————
+
+  void _openWs() {
+    _ws = WebSocketChannel.connect(Uri.parse(serverUrl));
+
+    // Announce the selected exercise once
+    _ws!.sink.add(jsonEncode({"type": _serverKey}));
+
+    // Listen for {"percent": int, "hold": int}
+    _ws!.stream.listen(
+      (event) {
+        try {
+          final m = jsonDecode(event as String) as Map<String, dynamic>;
+          final p = (m['percent'] as num?)?.toInt() ?? _percent;
+          final h = (m['hold'] as num?)?.toInt() ?? _holdSeconds;
+
+          bool changed = false;
+          if (p != _percent) {
+            _percent = p;
+            changed = true;
+          }
+          if (h != _holdSeconds) {
+            _holdSeconds = h;
+            changed = true;
+          }
+          if (changed && mounted) setState(() {});
+        } catch (e) {
+          debugPrint('WS parse error: $e');
+        }
+      },
+      onError: (e) => debugPrint('WS error: $e'),
+      onDone: () => debugPrint('WS closed'),
+    );
+  }
+
+  void _closeWs() {
+    try {
+      _ws?.sink.close();
+    } catch (_) {}
+    _ws = null;
+  }
+
+  // ———————————  WORKOUT FLOW  ———————————
+
+  void _startWorkout() async {
     setState(() {
-      _isRecording = false;
+      _isRecording = true;
+      _percent = 0;
+      _holdSeconds = 0;
     });
+    _openWs();
+    await _startStreaming();
+  }
 
-    _workoutTimer?.cancel();
+  Future<void> _stopWorkout() async {
+    setState(() => _isRecording = false);
+    await _stopStreaming();
+    _closeWs();
 
-    // Show workout completion dialog
     _showWorkoutCompletedDialog();
   }
 
@@ -108,46 +243,38 @@ class _CameraScreenState extends State<CameraScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppTheme.cardColor,
-          title: Text(
-            'Workout Completed!',
-            style: TextStyle(color: AppTheme.textColor),
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.cardColor,
+        title: Text(
+          'Workout Completed!',
+          style: TextStyle(color: AppTheme.textColor),
+        ),
+        content: Text(
+          'Great job on your ${widget.exerciseName} workout!\n\n'
+          'Hold (good form): ${_formatTime(_holdSeconds)}\n'
+          'Estimated calories: ${(_holdSeconds * 0.1).round()}',
+          style: TextStyle(color: AppTheme.subtextColor),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // close dialog
+              Navigator.pop(context); // back to dashboard
+            },
+            child: Text('Done', style: TextStyle(color: AppTheme.primaryColor)),
           ),
-          content: Text(
-            'Great job on your ${widget.exerciseName} workout!\n\nTime: ${_formatTime(_secondsElapsed)}\nEstimated calories burned: ${(_secondsElapsed * 0.1).round()}',
-            style: TextStyle(color: AppTheme.subtextColor),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close dialog
-                Navigator.pop(context); // Return to workout dashboard
-              },
-              child: Text(
-                'Done',
-                style: TextStyle(color: AppTheme.primaryColor),
-              ),
-            ),
-          ],
-        );
-      },
+        ],
+      ),
     );
   }
 
   String _formatTime(int seconds) {
-    int minutes = seconds ~/ 60;
-    int remainingSeconds = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+    final m = (seconds ~/ 60).toString().padLeft(2, '0');
+    final s = (seconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
   }
 
-  @override
-  void dispose() {
-    _controller?.dispose();
-    _workoutTimer?.cancel();
-    super.dispose();
-  }
+  // ———————————  UI  ———————————
 
   @override
   Widget build(BuildContext context) {
@@ -175,13 +302,9 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Widget _buildBody() {
-    if (!_permissionGranted) {
-      return _buildPermissionDeniedView();
-    }
-
-    if (!_isInitialized) {
+    if (!_permissionGranted) return _buildPermissionDeniedView();
+    if (!_isInitialized)
       return const Center(child: CircularProgressIndicator());
-    }
 
     return Column(
       children: [
@@ -196,7 +319,7 @@ class _CameraScreenState extends State<CameraScreen> {
           ),
         ),
 
-        // Workout info and controls
+        // Metrics + Controls
         Expanded(
           flex: 1,
           child: Container(
@@ -204,53 +327,14 @@ class _CameraScreenState extends State<CameraScreen> {
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                // Timer display
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.cardColor,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Text(
-                    _formatTime(_secondsElapsed),
-                    style: TextStyle(
-                      color: AppTheme.textColor,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _metric('Percent', '$_percent %'),
+                    _metric('Hold (good form)', _formatTime(_holdSeconds)),
+                  ],
                 ),
-
-                const SizedBox(height: 20),
-
-                // Exercise instructions
-                if (!_isRecording)
-                  Text(
-                    'Position yourself in front of the camera and start your ${widget.exerciseName} workout',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppTheme.subtextColor,
-                      fontSize: 14,
-                    ),
-                  ),
-
-                if (_isRecording)
-                  Text(
-                    'Keep going! The camera is tracking your form.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppTheme.primaryColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-
                 const Spacer(),
-
-                // Control buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -275,9 +359,8 @@ class _CameraScreenState extends State<CameraScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
-
-                    if (_isRecording)
+                      )
+                    else
                       ElevatedButton(
                         onPressed: _stopWorkout,
                         style: ElevatedButton.styleFrom(
@@ -304,6 +387,26 @@ class _CameraScreenState extends State<CameraScreen> {
               ],
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _metric(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            color: AppTheme.textColor,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(color: AppTheme.subtextColor, fontSize: 12),
         ),
       ],
     );
@@ -339,9 +442,7 @@ class _CameraScreenState extends State<CameraScreen> {
             ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: () {
-                openAppSettings();
-              },
+              onPressed: () => openAppSettings(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
