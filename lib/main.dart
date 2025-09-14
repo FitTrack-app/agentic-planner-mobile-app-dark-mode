@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'screens/workout_dashboard.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart'; // en haut
-import 'screens/metrics_screen.dart'; // Ajoutez cette ligne
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'screens/metrics_screen.dart';
+import 'screens/welcome_screen.dart';
+import 'screens/dashboard_home_screen.dart'; // Add this import
 
 void main() {
   runApp(MyApp());
@@ -17,7 +19,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.black,
         primarySwatch: Colors.blue,
       ),
-      home: HomeScreen(),
+      home: WelcomeScreen(),
     );
   }
 }
@@ -72,8 +74,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  UserProfile userProfile =
-      UserProfile(); // This would typically come from storage
+  UserProfile userProfile = UserProfile();
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCurrentPage() {
     switch (_currentIndex) {
       case 0:
-        return _buildHomeContent();
+        return const DashboardHomeScreen(); // Changed to use the new dashboard
       case 1:
         return _buildSearchContent();
       case 2:
@@ -95,84 +96,14 @@ class _HomeScreenState extends State<HomeScreen> {
       case 3:
         return _buildProfileContent();
       default:
-        return _buildHomeContent();
+        return const DashboardHomeScreen();
     }
   }
 
-  Widget _buildHomeContent() {
-    return SafeArea(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min, // évite que ça prenne tout l’écran
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Logo
-              Text(
-                'FitTrack',
-                style: TextStyle(
-                  color: AppTheme.textColor,
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -1,
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // Description
-              Text(
-                'Your journey to a\nhealthier you starts now.\nTrack your progress, set\ngoals, and achieve your\nfitness aspirations.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppTheme.subtextColor,
-                  fontSize: 18,
-                  height: 1.5,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // Color picker button
-              GestureDetector(
-                onTap: _showColorPicker,
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.palette,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              Text(
-                'Tap to customize your theme',
-                style: TextStyle(color: AppTheme.subtextColor, fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildSearchContent() {
-    // Remplacez la page de recherche par la page des métriques
     return MetricsScreen();
   }
 
-  // Updated _buildAddContent method
   Widget _buildAddContent() {
     return SafeArea(
       child: Center(
@@ -181,7 +112,6 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             GestureDetector(
               onTap: () {
-                // Navigate to workout dashboard
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -244,8 +174,104 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildSetupProfileCard()
             else
               _buildProfileSummary(),
+
+            // Add theme customization section
+            const SizedBox(height: 24),
+            _buildThemeCustomization(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildThemeCustomization() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.palette, size: 24, color: AppTheme.primaryColor),
+              const SizedBox(width: 12),
+              Text(
+                'Theme Customization',
+                style: TextStyle(
+                  color: AppTheme.textColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Personalize your app experience with custom colors.',
+            style: TextStyle(color: AppTheme.subtextColor, fontSize: 14),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: _showColorPicker,
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryColor.withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.color_lens,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Primary Color',
+                      style: TextStyle(
+                        color: AppTheme.textColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Tap to change theme color',
+                      style: TextStyle(
+                        color: AppTheme.subtextColor,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: AppTheme.subtextColor,
+                size: 16,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -395,9 +421,9 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart_outlined), // Icône de graphique
-            activeIcon: Icon(Icons.bar_chart), // Icône de graphique active
-            label: 'Metrics', // Changez le libellé
+            icon: Icon(Icons.bar_chart_outlined),
+            activeIcon: Icon(Icons.bar_chart),
+            label: 'Metrics',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.add_circle_outline),
@@ -422,9 +448,16 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: AppTheme.cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: Text(
             'Choose Theme Color',
-            style: TextStyle(color: AppTheme.textColor),
+            style: TextStyle(
+              color: AppTheme.textColor,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           content: SingleChildScrollView(
             child: ColorPicker(
@@ -453,10 +486,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
                 Navigator.pop(context);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: pickerColor),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: pickerColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
               child: const Text(
-                "Select",
-                style: TextStyle(color: Colors.white),
+                "Apply",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -482,7 +523,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Your existing ProfileSetupScreen with modifications to work with the new system
+// ProfileSetupScreen remains the same as in your original code
 class ProfileSetupScreen extends StatefulWidget {
   final UserProfile? existingProfile;
   final Function(UserProfile)? onProfileUpdated;
@@ -511,7 +552,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   void initState() {
     super.initState();
 
-    // Initialize with existing data if available
     final existing = widget.existingProfile;
     if (existing != null) {
       ageController.text = existing.age ?? '';
@@ -560,7 +600,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Age and Gender Row
             Row(
               children: [
                 Expanded(child: _buildTextField('Age', ageController)),
@@ -577,7 +616,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             ),
             SizedBox(height: 16),
 
-            // Height and Weight Row
             Row(
               children: [
                 Expanded(
@@ -591,7 +629,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             ),
             SizedBox(height: 32),
 
-            // Fitness Profile Section
             Text(
               'Fitness Profile',
               style: TextStyle(
@@ -610,7 +647,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             ),
             SizedBox(height: 32),
 
-            // Goals Section
             Text(
               'Your Goals',
               style: TextStyle(
@@ -630,18 +666,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             ], (value) => setState(() => selectedGoal = value!)),
             SizedBox(height: 16),
 
-            // Equipment Toggle
             _buildEquipmentToggle(),
 
             Spacer(),
 
-            // Continue Button
             Container(
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
                 onPressed: () {
-                  // Handle continue action
                   _handleContinue();
                 },
                 style: ElevatedButton.styleFrom(
@@ -762,7 +795,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   void _handleContinue() {
-    // Create updated profile
     final updatedProfile = UserProfile(
       age: ageController.text.isNotEmpty ? ageController.text : null,
       gender: selectedGender.isNotEmpty ? selectedGender : null,
@@ -775,15 +807,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       hasEquipment: hasEquipment,
     );
 
-    // Call the callback if provided
     if (widget.onProfileUpdated != null) {
       widget.onProfileUpdated!(updatedProfile);
     }
 
-    // Print or handle the data as needed
-    print('Profile Data: ${updatedProfile.age}, ${updatedProfile.weight}');
-
-    // Navigate back and show success message
     Navigator.pop(context);
 
     ScaffoldMessenger.of(context).showSnackBar(

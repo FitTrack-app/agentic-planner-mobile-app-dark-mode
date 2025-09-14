@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
 import 'camera_screen.dart'; // Import the camera screen
 
-// Using the same AppTheme from your existing code
-class AppTheme {
-  static Color primaryColor = Colors.blue[600]!;
-  static Color backgroundColor = Colors.black;
-  static Color cardColor = Colors.grey[800]!;
-  static Color textColor = Colors.white;
-  static Color subtextColor = Colors.grey[400]!;
-
-  static void updatePrimaryColor(Color newColor) {
-    primaryColor = newColor;
-  }
-}
+// We'll access the AppTheme from the main context or pass it as a parameter
+// For now, let's create a way to access the dynamic colors
 
 class WorkoutDashboard extends StatefulWidget {
-  const WorkoutDashboard({Key? key}) : super(key: key);
+  final Color? primaryColor;
+  final Color? backgroundColor;
+  final Color? cardColor;
+  final Color? textColor;
+  final Color? subtextColor;
+  final int initialTabIndex;
+
+  const WorkoutDashboard({
+    Key? key,
+    this.primaryColor,
+    this.backgroundColor,
+    this.cardColor,
+    this.textColor,
+    this.subtextColor,
+    this.initialTabIndex = 0,
+  }) : super(key: key);
 
   @override
   _WorkoutDashboardState createState() => _WorkoutDashboardState();
@@ -24,6 +29,13 @@ class WorkoutDashboard extends StatefulWidget {
 class _WorkoutDashboardState extends State<WorkoutDashboard>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+
+  // Color getters with fallbacks
+  Color get primaryColor => widget.primaryColor ?? Colors.blue[600]!;
+  Color get backgroundColor => widget.backgroundColor ?? Colors.black;
+  Color get cardColor => widget.cardColor ?? Colors.grey[800]!;
+  Color get textColor => widget.textColor ?? Colors.white;
+  Color get subtextColor => widget.subtextColor ?? Colors.grey[400]!;
 
   // Static data for calories balance
   final int dailyCaloriesGoal = 2000;
@@ -118,7 +130,11 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTabIndex,
+    );
   }
 
   @override
@@ -130,18 +146,18 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: AppTheme.textColor),
+          icon: Icon(Icons.arrow_back_ios, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Workout Dashboard',
           style: TextStyle(
-            color: AppTheme.textColor,
+            color: textColor,
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
@@ -149,9 +165,9 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppTheme.primaryColor,
-          labelColor: AppTheme.primaryColor,
-          unselectedLabelColor: AppTheme.subtextColor,
+          indicatorColor: primaryColor,
+          labelColor: primaryColor,
+          unselectedLabelColor: subtextColor,
           tabs: const [
             Tab(
               icon: Icon(Icons.local_fire_department, size: 20),
@@ -186,7 +202,7 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
             width: double.infinity,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppTheme.cardColor,
+              color: cardColor,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -194,7 +210,7 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
                 Text(
                   'Daily Calories Goal',
                   style: TextStyle(
-                    color: AppTheme.subtextColor,
+                    color: subtextColor,
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
@@ -212,9 +228,7 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
                         strokeWidth: 12,
                         backgroundColor: Colors.grey[700],
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          remaining > 0
-                              ? AppTheme.primaryColor
-                              : Colors.red[400]!,
+                          remaining > 0 ? primaryColor : Colors.red[400]!,
                         ),
                       ),
                       Center(
@@ -224,7 +238,7 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
                             Text(
                               remaining > 0 ? remaining.toString() : '0',
                               style: TextStyle(
-                                color: AppTheme.textColor,
+                                color: textColor,
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -232,7 +246,7 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
                             Text(
                               'calories remaining',
                               style: TextStyle(
-                                color: AppTheme.subtextColor,
+                                color: subtextColor,
                                 fontSize: 14,
                               ),
                             ),
@@ -283,12 +297,12 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
           // Upcoming Workouts Section
           Row(
             children: [
-              Icon(Icons.schedule, color: AppTheme.primaryColor, size: 24),
+              Icon(Icons.schedule, color: primaryColor, size: 24),
               const SizedBox(width: 8),
               Text(
                 'Upcoming Workouts',
                 style: TextStyle(
-                  color: AppTheme.textColor,
+                  color: textColor,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
@@ -306,12 +320,12 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
           // Workout History Section
           Row(
             children: [
-              Icon(Icons.history, color: AppTheme.primaryColor, size: 24),
+              Icon(Icons.history, color: primaryColor, size: 24),
               const SizedBox(width: 8),
               Text(
                 'Workout History',
                 style: TextStyle(
-                  color: AppTheme.textColor,
+                  color: textColor,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
@@ -321,6 +335,38 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
           const SizedBox(height: 16),
 
           ...workoutHistory.map((session) => _buildSessionCard(session, false)),
+
+          const SizedBox(height: 20),
+
+          // Weekly Summary Card (from first version)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.insights, color: primaryColor, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  'Weekly Summary',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '3 workouts completed\n780 calories burned',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: subtextColor, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -335,7 +381,7 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
           Text(
             'Exercise Assistant',
             style: TextStyle(
-              color: AppTheme.textColor,
+              color: textColor,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
@@ -343,7 +389,7 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
           const SizedBox(height: 8),
           Text(
             'Select an exercise to start with camera assistance:',
-            style: TextStyle(color: AppTheme.subtextColor, fontSize: 14),
+            style: TextStyle(color: subtextColor, fontSize: 14),
           ),
           const SizedBox(height: 24),
 
@@ -373,13 +419,10 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppTheme.cardColor,
+          color: cardColor,
           borderRadius: BorderRadius.circular(16),
           border: isUpcoming && !session.isCompleted
-              ? Border.all(
-                  color: AppTheme.primaryColor.withOpacity(0.5),
-                  width: 1,
-                )
+              ? Border.all(color: primaryColor.withOpacity(0.5), width: 1)
               : null,
         ),
         child: Column(
@@ -393,14 +436,12 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
                   decoration: BoxDecoration(
                     color: session.isCompleted
                         ? Colors.green.withOpacity(0.2)
-                        : AppTheme.primaryColor.withOpacity(0.2),
+                        : primaryColor.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     session.isCompleted ? Icons.check_circle : Icons.schedule,
-                    color: session.isCompleted
-                        ? Colors.green
-                        : AppTheme.primaryColor,
+                    color: session.isCompleted ? Colors.green : primaryColor,
                     size: 24,
                   ),
                 ),
@@ -412,7 +453,7 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
                       Text(
                         session.name,
                         style: TextStyle(
-                          color: AppTheme.textColor,
+                          color: textColor,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -420,25 +461,18 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
                       const SizedBox(height: 4),
                       Text(
                         '${session.duration} • ${session.calories} cal • ${session.date}',
-                        style: TextStyle(
-                          color: AppTheme.subtextColor,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: subtextColor, fontSize: 14),
                       ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: AppTheme.subtextColor,
-                  size: 20,
-                ),
+                Icon(Icons.chevron_right, color: subtextColor, size: 20),
               ],
             ),
             const SizedBox(height: 12),
             Text(
               '${session.exercises.length} exercises',
-              style: TextStyle(color: AppTheme.subtextColor, fontSize: 12),
+              style: TextStyle(color: subtextColor, fontSize: 12),
             ),
           ],
         ),
@@ -458,15 +492,12 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
         Text(
           value.toString(),
           style: TextStyle(
-            color: AppTheme.textColor,
+            color: textColor,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
-        Text(
-          label,
-          style: TextStyle(color: AppTheme.subtextColor, fontSize: 12),
-        ),
+        Text(label, style: TextStyle(color: subtextColor, fontSize: 12)),
       ],
     );
   }
@@ -477,22 +508,19 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppTheme.cardColor,
+          color: cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppTheme.primaryColor.withOpacity(0.3),
-            width: 1,
-          ),
+          border: Border.all(color: primaryColor.withOpacity(0.3), width: 1),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(exercise.icon, color: AppTheme.primaryColor, size: 40),
+            Icon(exercise.icon, color: primaryColor, size: 40),
             const SizedBox(height: 12),
             Text(
               exercise.name,
               style: TextStyle(
-                color: AppTheme.textColor,
+                color: textColor,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -517,7 +545,7 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
   void _openWorkoutDetail(WorkoutSession session) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: backgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -540,14 +568,12 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
                 decoration: BoxDecoration(
                   color: session.isCompleted
                       ? Colors.green.withOpacity(0.2)
-                      : AppTheme.primaryColor.withOpacity(0.2),
+                      : primaryColor.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   session.isCompleted ? Icons.check_circle : Icons.schedule,
-                  color: session.isCompleted
-                      ? Colors.green
-                      : AppTheme.primaryColor,
+                  color: session.isCompleted ? Colors.green : primaryColor,
                   size: 24,
                 ),
               ),
@@ -559,17 +585,14 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
                     Text(
                       session.name,
                       style: TextStyle(
-                        color: AppTheme.textColor,
+                        color: textColor,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
                       '${session.duration} • ${session.calories} cal • ${session.date}',
-                      style: TextStyle(
-                        color: AppTheme.subtextColor,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: subtextColor, fontSize: 14),
                     ),
                   ],
                 ),
@@ -580,7 +603,7 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
           Text(
             'Exercises',
             style: TextStyle(
-              color: AppTheme.textColor,
+              color: textColor,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -597,12 +620,12 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Starting ${session.name}...'),
-                      backgroundColor: AppTheme.primaryColor,
+                      backgroundColor: primaryColor,
                     ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: primaryColor,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -633,12 +656,12 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.cardColor,
+          color: cardColor,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            Icon(exercise.icon, color: AppTheme.primaryColor, size: 24),
+            Icon(exercise.icon, color: primaryColor, size: 24),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -647,22 +670,19 @@ class _WorkoutDashboardState extends State<WorkoutDashboard>
                   Text(
                     exercise.name,
                     style: TextStyle(
-                      color: AppTheme.textColor,
+                      color: textColor,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
                     exercise.details,
-                    style: TextStyle(
-                      color: AppTheme.subtextColor,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: subtextColor, fontSize: 12),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.camera_alt, color: AppTheme.subtextColor, size: 20),
+            Icon(Icons.camera_alt, color: subtextColor, size: 20),
           ],
         ),
       ),
