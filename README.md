@@ -78,11 +78,6 @@ The app will be installed and launched on your connected Android device.
 ```
 lib/
 ├── screens/            # App screens/pages
-├── widgets/            # Reusable UI widgets
-├── models/             # Data models
-├── services/           # API and business logic
-├── providers/          # State management
-├── utils/              # Helper utilities
 └── main.dart           # App entry point
 ```
 
