@@ -131,10 +131,3 @@ flutter run
 
 
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For frontend-specific issues, please use this repository's [issue tracker](https://github.com/fittrac/frontend/issues).
-
-For general project questions, visit our [main documentation](https://github.com/fittrac/docs) or [community discussions](https://github.com/orgs/fittrac/discussions).
