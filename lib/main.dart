@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/workout_dashboard.dart';
-import 'screens/homescren.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart'; // en haut
+import 'screens/metrics_screen.dart'; // Ajoutez cette ligne
 
 void main() {
   runApp(MyApp());
@@ -16,25 +17,21 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.black,
         primarySwatch: Colors.blue,
       ),
-      home: MainAppScreen(), // Changed to use new main screen
+      home: HomeScreen(),
     );
   }
 }
 
-// Color theme data class (updated to be consistent with homescreen.dart)
+// Color theme data class
 class AppTheme {
   static Color primaryColor = Colors.blue[600]!;
   static Color backgroundColor = Colors.black;
   static Color cardColor = Colors.grey[800]!;
   static Color textColor = Colors.white;
   static Color subtextColor = Colors.grey[400]!;
-
-  static void updatePrimaryColor(Color newColor) {
-    primaryColor = newColor;
-  }
 }
 
-// User profile data model (unchanged)
+// User profile data model
 class UserProfile {
   String? age;
   String? gender;
@@ -68,15 +65,15 @@ class UserProfile {
   }
 }
 
-// Main app screen with bottom navigation
-class MainAppScreen extends StatefulWidget {
+class HomeScreen extends StatefulWidget {
   @override
-  _MainAppScreenState createState() => _MainAppScreenState();
+  _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _MainAppScreenState extends State<MainAppScreen> {
+class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  UserProfile userProfile = UserProfile();
+  UserProfile userProfile =
+      UserProfile(); // This would typically come from storage
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +87,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
   Widget _buildCurrentPage() {
     switch (_currentIndex) {
       case 0:
-        return HomeScreen(); // Use the new standalone HomeScreen
+        return _buildHomeContent();
       case 1:
         return _buildSearchContent();
       case 2:
@@ -98,47 +95,84 @@ class _MainAppScreenState extends State<MainAppScreen> {
       case 3:
         return _buildProfileContent();
       default:
-        return HomeScreen();
+        return _buildHomeContent();
     }
   }
 
-  Widget _buildSearchContent() {
+  Widget _buildHomeContent() {
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            Text(
-              'Search',
-              style: TextStyle(
-                color: AppTheme.textColor,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.cardColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextField(
-                style: TextStyle(color: AppTheme.textColor),
-                decoration: InputDecoration(
-                  hintText: 'Search workouts, exercises...',
-                  hintStyle: TextStyle(color: AppTheme.subtextColor),
-                  prefixIcon: Icon(Icons.search, color: AppTheme.subtextColor),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(16),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // évite que ça prenne tout l’écran
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Logo
+              Text(
+                'FitTrack',
+                style: TextStyle(
+                  color: AppTheme.textColor,
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -1,
                 ),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 40),
+
+              // Description
+              Text(
+                'Your journey to a\nhealthier you starts now.\nTrack your progress, set\ngoals, and achieve your\nfitness aspirations.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppTheme.subtextColor,
+                  fontSize: 18,
+                  height: 1.5,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              // Color picker button
+              GestureDetector(
+                onTap: _showColorPicker,
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.palette,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              Text(
+                'Tap to customize your theme',
+                style: TextStyle(color: AppTheme.subtextColor, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  Widget _buildSearchContent() {
+    // Remplacez la page de recherche par la page des métriques
+    return MetricsScreen();
+  }
+
+  // Updated _buildAddContent method
   Widget _buildAddContent() {
     return SafeArea(
       child: Center(
@@ -147,6 +181,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
           children: [
             GestureDetector(
               onTap: () {
+                // Navigate to workout dashboard
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -360,9 +395,9 @@ class _MainAppScreenState extends State<MainAppScreen> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search_outlined),
-            activeIcon: Icon(Icons.search),
-            label: 'Search',
+            icon: Icon(Icons.bar_chart_outlined), // Icône de graphique
+            activeIcon: Icon(Icons.bar_chart), // Icône de graphique active
+            label: 'Metrics', // Changez le libellé
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.add_circle_outline),
@@ -376,6 +411,57 @@ class _MainAppScreenState extends State<MainAppScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showColorPicker() {
+    Color pickerColor = AppTheme.primaryColor;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppTheme.cardColor,
+          title: Text(
+            'Choose Theme Color',
+            style: TextStyle(color: AppTheme.textColor),
+          ),
+          content: SingleChildScrollView(
+            child: ColorPicker(
+              pickerColor: pickerColor,
+              onColorChanged: (color) {
+                setState(() {
+                  pickerColor = color;
+                });
+              },
+              showLabel: true,
+              pickerAreaHeightPercent: 0.8,
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text(
+                "Cancel",
+                style: TextStyle(color: AppTheme.subtextColor),
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  AppTheme.primaryColor = pickerColor;
+                });
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: pickerColor),
+              child: const Text(
+                "Select",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -396,7 +482,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
   }
 }
 
-// Keep your existing ProfileSetupScreen class unchanged
+// Your existing ProfileSetupScreen with modifications to work with the new system
 class ProfileSetupScreen extends StatefulWidget {
   final UserProfile? existingProfile;
   final Function(UserProfile)? onProfileUpdated;
@@ -425,6 +511,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   void initState() {
     super.initState();
 
+    // Initialize with existing data if available
     final existing = widget.existingProfile;
     if (existing != null) {
       ageController.text = existing.age ?? '';
@@ -473,6 +560,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             ),
             const SizedBox(height: 16),
 
+            // Age and Gender Row
             Row(
               children: [
                 Expanded(child: _buildTextField('Age', ageController)),
@@ -489,6 +577,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             ),
             SizedBox(height: 16),
 
+            // Height and Weight Row
             Row(
               children: [
                 Expanded(
@@ -502,6 +591,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             ),
             SizedBox(height: 32),
 
+            // Fitness Profile Section
             Text(
               'Fitness Profile',
               style: TextStyle(
@@ -520,6 +610,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             ),
             SizedBox(height: 32),
 
+            // Goals Section
             Text(
               'Your Goals',
               style: TextStyle(
@@ -539,14 +630,18 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             ], (value) => setState(() => selectedGoal = value!)),
             SizedBox(height: 16),
 
+            // Equipment Toggle
             _buildEquipmentToggle(),
+
             Spacer(),
 
+            // Continue Button
             Container(
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
                 onPressed: () {
+                  // Handle continue action
                   _handleContinue();
                 },
                 style: ElevatedButton.styleFrom(
@@ -667,6 +762,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   void _handleContinue() {
+    // Create updated profile
     final updatedProfile = UserProfile(
       age: ageController.text.isNotEmpty ? ageController.text : null,
       gender: selectedGender.isNotEmpty ? selectedGender : null,
@@ -679,10 +775,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       hasEquipment: hasEquipment,
     );
 
+    // Call the callback if provided
     if (widget.onProfileUpdated != null) {
       widget.onProfileUpdated!(updatedProfile);
     }
 
+    // Print or handle the data as needed
+    print('Profile Data: ${updatedProfile.age}, ${updatedProfile.weight}');
+
+    // Navigate back and show success message
     Navigator.pop(context);
 
     ScaffoldMessenger.of(context).showSnackBar(
