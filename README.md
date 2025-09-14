@@ -78,17 +78,17 @@ The app will be installed and launched on your connected Android device.
 
 ## Screen Components Overview
 
--**main.dart** - App entry point and navigation setup
--**welcome_screen.dart** - First screen users see with app introduction and navigation to login/signup
--**login_screen.dart** - User authentication and login functionality
--**signup_screen.dart** - New user registration with form validation
--**forgot_password.dart** - Password recovery flow for existing users
--**homescreen.dart** - Main home screen after login, central navigation hub
--**dashboard_home.dart** - User dashboard with overview of fitness progress and stats
--**workout_dashboard.dart**- Workout-specific dashboard showing exercise plans and progress
--**camera_screen.dart** - Real-time form checking using device camera and AI analysis
--**metrics_screen.dart** - Detailed fitness metrics, charts, and progress tracking
--**Profile.dart** - User profile management, settings, and account information
+-**main.dart** : App entry point and navigation setup
+-**welcome_screen.dart** : First screen users see with app introduction and navigation to login/signup
+-**login_screen.dart** : User authentication and login functionality
+-**signup_screen.dart** : New user registration with form validation
+-**forgot_password.dart** :  Password recovery flow for existing users
+-**homescreen.dart** : Main home screen after login, central navigation hub
+-**dashboard_home.dart** : User dashboard with overview of fitness progress and stats
+-**workout_dashboard.dart** : Workout-specific dashboard showing exercise plans and progress
+-**camera_screen.dart** : Real-time form checking using device camera and AI analysis
+-**metrics_screen.dart** :  Detailed fitness metrics, charts, and progress tracking
+-**Profile.dart** : User profile management, settings, and account information
 
 
 ## Key Features
