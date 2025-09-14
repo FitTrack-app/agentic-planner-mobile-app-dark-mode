@@ -76,7 +76,7 @@ The app will be installed and launched on your connected Android device.
 
 <img width="221" height="340" alt="image" src="https://github.com/user-attachments/assets/e5c8a7e1-5084-42a0-aba6-29aaff57128b" />
 
-Screen Components Overview
+## Screen Components Overview
 
 -**main.dart** - App entry point and navigation setup
 -**welcome_screen.dart** - First screen users see with app introduction and navigation to login/signup
