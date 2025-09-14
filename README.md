@@ -2,13 +2,14 @@
 
 ## About This Repository
 
-This repository contains the **frontend mobile application** for the Fittrac project. It focuses on the user interface and client-side logic for workout planning and real-time form correction using AI models and the device camera.
+This repository contains the **frontend mobile application** for the Fittrac project. It focuses on the user interface and client-side logic for workout planning, **training hours prediction**, and real-time form correction using AI models and the device camera.
 
 > **Note:** This is the frontend-only repository built with Flutter. For backend services, AI model training, and other components, please refer to the corresponding repositories in the [Fittrac organization](https://github.com/fittrac).
 
 ## Features
 
 - **Personalized Workout Planning UI** - Interactive interface powered by AI-driven APIs for customized fitness routines
+- **Training Hours Prediction** - Integrated prediction model that estimates optimal training hours based on user profile and history
 - **Real-time Form Feedback** - Live exercise form correction using camera integration and pose detection
 - **Cross-platform Support** - Runs on both Android and iOS devices
 - **Progress Tracking** - Visual dashboards for monitoring fitness goals and achievements
@@ -23,6 +24,7 @@ This repository contains the **frontend mobile application** for the Fittrac pro
 - **HTTP Requests**: dio package
 - **Local Storage**: shared_preferences
 - **Charts & Analytics**: fl_chart
+- **Prediction Model Integration**: REST API endpoints for training hours prediction
 
 ## Prerequisites
 
@@ -31,6 +33,7 @@ This repository contains the **frontend mobile application** for the Fittrac pro
 - **Android device** with USB debugging enabled
 - **USB cable** for device connection
 - Backend API services running (see [Fittrac Backend](https://github.com/fittrac/backend))
+- Ensure the **Prediction API** for training hours is deployed and accessible
 
 ## Getting Started
 
@@ -57,7 +60,6 @@ This repository contains the **frontend mobile application** for the Fittrac pro
    flutter pub get
    ```
 
-
 ### Running the App
 
 1. **Connect your Android device via USB cable**
@@ -77,6 +79,8 @@ The app will be installed and launched on your connected Android device.
 
 ```
 lib/
+├── models/             # Data models including prediction model integration
+├── services/           # API services for training hours prediction and others
 ├── screens/            # App screens/pages
 └── main.dart           # App entry point
 ```
@@ -84,21 +88,22 @@ lib/
 ## Screen Components Overview
 
 - **main.dart** - App entry point and navigation setup
-- **welcome_screen.dart** - First screen users see with app introduction and navigation to login/signup
+- **welcome_screen.dart** - App introduction and navigation to login/signup
 - **login_screen.dart** - User authentication and login functionality
 - **signup_screen.dart** - New user registration with form validation
 - **forgot_password.dart** - Password recovery flow for existing users
 - **homescreen.dart** - Main home screen after login, central navigation hub
 - **dashboard_home.dart** - User dashboard with overview of fitness progress and stats
 - **workout_dashboard.dart** - Workout-specific dashboard showing exercise plans and progress
+- **training_hours_screen.dart** - Displays predicted training hours with suggestions
 - **camera_screen.dart** - Real-time form checking using device camera and AI analysis
 - **metrics_screen.dart** - Detailed fitness metrics, charts, and progress tracking
 - **Profile.dart** - User profile management, settings, and account information
 
-## Camera Integration
+## Camera & Prediction Integration
 
-The app requires camera permissions for form checking features. Camera permissions are configured in the `android/app/src/main/AndroidManifest.xml` file. The app will automatically request permissions when the camera feature is first used.
-
+- **Camera permissions** are configured in `android/app/src/main/AndroidManifest.xml`.
+- **Prediction model API** is consumed via REST endpoints; ensure the endpoint URL is correctly set in your environment config.
 
 ## Development
 
@@ -120,9 +125,4 @@ flutter clean
 
 ```bash
 # Run unit tests
-flutter run
-
-
-
-
-
+flutter test
